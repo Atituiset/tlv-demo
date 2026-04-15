@@ -44,6 +44,14 @@ def run_demo():
     response = bs.receive(msg)
     phone.process_response(response)
 
+    # ========== 阶段4: 嵌套TLV演示 ==========
+    print("\n【阶段4】嵌套TLV (Nested TLV)")
+    print("-" * 40)
+
+    msg = phone.send_attach_with_capabilities()
+    response = bs.receive(msg)
+    phone.process_response(response)
+
     print("\n" + "=" * 60)
     print("Demo完成!")
     print("=" * 60)

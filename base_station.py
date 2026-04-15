@@ -1,7 +1,9 @@
 """基站模拟器"""
 
 from tlv_codec import TLVCodec
+from nested_tlv_codec import NestedTLVCodec
 import messages
+
 
 class BaseStation:
     """基站类"""
@@ -9,6 +11,7 @@ class BaseStation:
     def __init__(self):
         self.connected = False
         self.codec = TLVCodec()
+        self.nested_codec = NestedTLVCodec()
 
     def receive(self, data: bytes) -> bytes | None:
         """接收并处理手机发来的消息"""
@@ -17,6 +20,9 @@ class BaseStation:
 
         if msg_type == messages.MSG_ATTACH_REQUEST:
             self.connected = True
+            # 解析嵌套的CapabilityInfo
+            nested_items = self.nested_codec.decode_nested(value)
+            self._print_nested_structure(nested_items, indent=4)
             response = self.codec.encode(messages.MSG_ATTACH_ACCEPT, b'\x00\x01')
             print(f"  [基站] 发送: AttachAccept")
             return response
@@ -37,3 +43,19 @@ class BaseStation:
             return response
 
         return None
+
+    def _print_nested_structure(self, items: list, indent: int = 4):
+        """打印嵌套TLV结构"""
+        prefix = " " * indent
+        for tag, value in items:
+            name = messages.get_msg_name(tag)
+            if isinstance(value, list):
+                print(f"{prefix}├── {name}:")
+                self._print_nested_structure(value, indent + 4)
+            else:
+                # 检查是否为可打印ASCII
+                if all(0x20 <= b < 0x7f for b in value):
+                    print(f"{prefix}├── {name}: {value.decode('ascii')}")
+                else:
+                    print(f"{prefix}├── {name}: 0x{value.hex()}")
+
